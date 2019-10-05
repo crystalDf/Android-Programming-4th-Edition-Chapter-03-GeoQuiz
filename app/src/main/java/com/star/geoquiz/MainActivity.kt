@@ -39,34 +39,34 @@ class MainActivity : AppCompatActivity() {
         }
 
         question_text_view.setOnClickListener {
-            updateQuestion(Order.NEXT)
+            next_button.performClick()
         }
 
         true_button.setOnClickListener {
-            checkAnswer(true)
+            getAnswer(true)
         }
 
         false_button.setOnClickListener {
-            checkAnswer(false)
+            getAnswer(false)
         }
 
         prev_button.setOnClickListener {
-            updateQuestion(Order.PREV)
+            getQuestion(Order.PREV)
         }
 
         next_button.setOnClickListener {
-            updateQuestion(Order.NEXT)
+            getQuestion(Order.NEXT)
         }
 
         prev_image_button.setOnClickListener {
-            updateQuestion(Order.PREV)
+            prev_button.performClick()
         }
 
         next_image_button.setOnClickListener {
-            updateQuestion(Order.NEXT)
+            next_button.performClick()
         }
 
-        updateQuestion(Order.CURRENT)
+        getQuestion(Order.CURRENT)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -78,7 +78,20 @@ class MainActivity : AppCompatActivity() {
         outState.putBoolean(keyFinishedStatus, finishedStatus)
     }
 
-    private fun updateQuestion(order: Order) {
+    private fun getQuestion(order: Order) {
+
+        updateIndex(order)
+        updateQuestion()
+        updateButton()
+    }
+
+    private fun getAnswer(userAnswer: Boolean) {
+
+        checkAnswer(userAnswer)
+        updateButton()
+    }
+
+    private fun updateIndex(order: Order) {
 
         while (true) {
             currentIndex = when (order) {
@@ -91,36 +104,12 @@ class MainActivity : AppCompatActivity() {
                 break
             }
         }
+    }
+
+    private fun updateQuestion() {
 
         val questionResId = questionBank[currentIndex].textResId
         question_text_view.setText(questionResId)
-
-        updateButton()
-    }
-
-    private fun checkAnswer(userAnswer: Boolean) {
-
-        val correctAnswer = questionBank[currentIndex].answer
-
-        correctStatus[currentIndex] = (userAnswer == correctAnswer)
-        answeredStatus[currentIndex] = true
-        finishedStatus = answeredStatus.all { element -> element }
-
-        val messageResId = if (correctStatus[currentIndex]) {
-            R.string.correct_toast
-        } else {
-            R.string.incorrect_toast
-        }
-
-        var result = getString(messageResId)
-
-        if (finishedStatus) {
-            result += "\n" + "Score: " + String.format("%.2f", getScore())
-        }
-
-        updateButton()
-
-        Toast.makeText(this, result, Toast.LENGTH_SHORT).show()
     }
 
     private fun updateButton() {
@@ -134,12 +123,31 @@ class MainActivity : AppCompatActivity() {
         next_image_button.isEnabled = !finishedStatus
     }
 
+    private fun checkAnswer(userAnswer: Boolean) {
+
+        val correctAnswer = questionBank[currentIndex].answer
+
+        correctStatus[currentIndex] = (userAnswer == correctAnswer)
+        answeredStatus[currentIndex] = true
+        finishedStatus = answeredStatus.all { element -> element }
+
+        val messageResId = when (correctStatus[currentIndex]) {
+            true -> R.string.correct_toast
+            false -> R.string.incorrect_toast
+        }
+
+        var result = getString(messageResId)
+
+        if (finishedStatus) {
+            result += "\n" + "Score: " + String.format("%.2f", getScore())
+        }
+
+        Toast.makeText(this, result, Toast.LENGTH_SHORT).show()
+    }
+
     private fun getScore(): Double {
 
         val correctAnswers = correctStatus.count { element -> element }
-
-        Toast.makeText(this,
-            "Number of Correct Answer: $correctAnswers", Toast.LENGTH_SHORT).show()
 
         return correctAnswers.toDouble() / questionBank.size * 100
     }
